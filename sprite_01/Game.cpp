@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include "SDL2/SDL_image.h"
+#include "sol/sol.hpp" //add sol header for reading in config.lua
 
 #include "AssetManager.hpp"
 #include "EntityManager.hpp"
@@ -80,18 +81,36 @@ void Game::render()
 
 void Game::load_level(const int number)
 {
-   // add assets to asset manager
-   asset_manager->add_texture("tank-image", "../assets/images/tank-big-right.png");
-   asset_manager->add_texture("chopper-image", "../assets/images/chopper-spritesheet.png");
+   sol::state lua; //open a lua state
+   lua.open_libraries(sol::lib::base, sol::lib::table);
+   lua.script_file("config.lua"); //and go through config.lua file
+   
+   //Look through config.lua and create defined assets - complete
+   sol::lua_table assets = lua["assets"];
+   for(const auto& key_value_pair : assets) {
+      sol::object k = key_value_pair.first;
+      sol::object v = key_value_pair.second;
+      asset_manager->add_texture(k.as<std::string>(), v.as<std::string>().c_str());
+   }
 
-   // create entities and add components to them
-   Entity& tank_entity(entity_mgr.add_entity("tank"));
-   tank_entity.add_component<TransformComponent>(0,0,20,20,32,32,1);
-   tank_entity.add_component<SpriteComponent>("tank-image");
+   //Create entities based on tables in config.lua - not complete
+   sol::lua_table entities = lua["entities"];
+   for(const auto& key_value_pair : assets) {
+      sol::object k = key_value_pair.first;
+      sol::object v = key_value_pair.second;
+      Entity& new_entity(entity_mgr.add_entity(k.as<std::string>()));
 
-   Entity& chopper_entity(entity_mgr.add_entity("chopper"));
-   chopper_entity.add_component<TransformComponent>(240, 106, 0, 0, 32, 32, 1);
-   chopper_entity.add_component<SpriteComponent>("chopper-image");
+      //new_entity.add_component<TransformComponent>();
+      //new_entity.add_component<SpriteComponent>();
+   }
+
+   // DELETE THIS CODE WHEN THE FOR LOOP IS FINISHED
+   // Entity& tank_entity(entity_mgr.add_entity("tank"));
+   // tank_entity.add_component<TransformComponent>(0,0,20,20,32,32,1);
+   // tank_entity.add_component<SpriteComponent>("tank-image");
+   // Entity& chopper_entity(entity_mgr.add_entity("chopper"));
+   // chopper_entity.add_component<TransformComponent>(240, 106, 0, 0, 32, 32, 1);
+   // chopper_entity.add_component<SpriteComponent>("chopper-image");
 
    entity_mgr.list_all_entities();
 }
