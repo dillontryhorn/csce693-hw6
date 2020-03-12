@@ -95,10 +95,34 @@ void Game::load_level(const int number)
 
    //Create entities based on tables in config.lua - not complete
    sol::lua_table entities = lua["entities"];
-   for(const auto& key_value_pair : assets) {
+   for(const auto& key_value_pair : entities) {
       sol::object k = key_value_pair.first;
       sol::object v = key_value_pair.second;
       Entity& new_entity(entity_mgr.add_entity(k.as<std::string>()));
+
+      sol::lua_table components = entities[k.as<std::string>()];
+      for(const auto& innerKVP : components) {
+         sol::object key = innerKVP.first;
+         sol::object val = innerKVP.second;
+
+         sol::lua_table members = components[key.as<std::string>()];
+         std::vector<sol::object> args = {};
+         for(const auto& params : members) {
+            sol::object varName = params.first;
+            sol::object varVal = params.second;
+            args.push_back(varVal);
+         }
+
+         if(key.as<std::string>() == "transform"){
+            new_entity.add_component<TransformComponent>(args[0].as<float>(),args[1].as<float>(),args[2].as<float>(),args[3].as<float>(),args[4].as<float>(),args[5].as<float>(),args[6].as<float>());
+         }
+         else if(key.as<std::string>() == "sprite"){
+            new_entity.add_component<SpriteComponent>(args[0].as<std::string>());
+         }
+         else{
+            std::cout << "unknown component type\n";
+         }
+      }
 
       //new_entity.add_component<TransformComponent>();
       //new_entity.add_component<SpriteComponent>();
