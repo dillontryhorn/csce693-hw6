@@ -14,6 +14,13 @@ Entity::Entity(EntityManager& manager, std::string name)
 : manager(manager), name(name)
 {}
 
+void Entity::initialize() //call initialize to each of the components
+{
+   for(auto& component: components) {
+      component->initialize();
+   }
+}
+
 void Entity::update(const float dt)
 {
    for(auto& component: components) {

@@ -12,6 +12,7 @@ public:
    Game(const char* title, int xpos, int ypos, int width, int height, bool fullscreen);
    ~Game();
 
+   void initialize(); //call initialize of entity manager
    void handle_events();
    void update(const float dt);
    void render();

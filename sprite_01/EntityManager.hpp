@@ -11,6 +11,7 @@ class EntityManager
 {
 public:
 
+   void initialize(); //calls initialize of each of its entities
    void clear_data();
    void update(const float dt);
    void render();

@@ -3,6 +3,13 @@
 
 #include <iostream>
 
+void EntityManager::initialize() //call initialize in each entity
+{
+   for (auto& entity: entities) {
+      entity->initialize();
+   }
+}
+
 void EntityManager::clear_data()
 {
    for (auto& entity: entities) {

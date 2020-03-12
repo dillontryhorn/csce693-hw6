@@ -14,6 +14,7 @@ public:
    std::string name;
    Entity(EntityManager& manager);
    Entity(EntityManager& manager, std::string name);
+   void initialize(); //calls initialize on each of its components
    void update(const float dt);
    void render();
    void destroy();
@@ -25,7 +26,7 @@ public:
       component->owner = this;
       components.emplace_back(component);
       component_type_map[&typeid(*component)] = component;
-      component->initialize();
+      //component->initialize(); - DO NOT CALL THIS ANYMORE, initialize is called right after game creation
       return *component;
    }
 

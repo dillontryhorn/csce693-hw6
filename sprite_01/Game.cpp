@@ -48,6 +48,11 @@ Game::~Game()
    SDL_Quit();
 }
 
+void Game::initialize() //calls initialize of entity manager
+{
+   entity_mgr.initialize();
+}
+
 void Game::handle_events()
 {
    SDL_Event event;
