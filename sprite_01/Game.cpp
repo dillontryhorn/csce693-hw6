@@ -2,6 +2,7 @@
 #include "Game.hpp"
 
 #include <iostream>
+#include <map>
 #include "SDL2/SDL_image.h"
 #include "sol/sol.hpp" //add sol header for reading in config.lua
 
@@ -85,7 +86,7 @@ void Game::load_level(const int number)
    lua.open_libraries(sol::lib::base, sol::lib::table);
    lua.script_file("config.lua"); //and go through config.lua file
    
-   //Look through config.lua and create defined assets - complete
+   //Look through config.lua and create defined assets
    sol::lua_table assets = lua["assets"];
    for(const auto& key_value_pair : assets) {
       sol::object k = key_value_pair.first;
@@ -93,48 +94,41 @@ void Game::load_level(const int number)
       asset_manager->add_texture(k.as<std::string>(), v.as<std::string>().c_str());
    }
 
-   //Create entities based on tables in config.lua - not complete
+   //Create entities based on tables in config.lua
    sol::lua_table entities = lua["entities"];
-   for(const auto& key_value_pair : entities) {
+   for(const auto& key_value_pair : entities) { //higher level, type of world object to be made
       sol::object k = key_value_pair.first;
       sol::object v = key_value_pair.second;
-      Entity& new_entity(entity_mgr.add_entity(k.as<std::string>()));
+      Entity& new_entity(entity_mgr.add_entity(k.as<std::string>())); //create a new entity based on type defined in lua file
 
+      //Now we need to create and modify the components
       sol::lua_table components = entities[k.as<std::string>()];
-      for(const auto& innerKVP : components) {
+      for(const auto& innerKVP : components) { //create components defined in config.lua
          sol::object key = innerKVP.first;
          sol::object val = innerKVP.second;
 
-         sol::lua_table members = components[key.as<std::string>()];
-         std::vector<sol::object> args = {};
+         sol::lua_table members = components[key.as<std::string>()]; //create new lua table to parse
+         std::map<std::string, std::string> varmap; //map is used because the args usually come in different orders every time
          for(const auto& params : members) {
-            sol::object varName = params.first;
-            sol::object varVal = params.second;
-            args.push_back(varVal);
+            varmap[params.first.as<std::string>()] = params.second.as<std::string>(); //create a map to hold the key and values of component attributes
          }
 
-         if(key.as<std::string>() == "transform"){
-            new_entity.add_component<TransformComponent>(args[0].as<float>(),args[1].as<float>(),args[2].as<float>(),args[3].as<float>(),args[4].as<float>(),args[5].as<float>(),args[6].as<float>());
+         if(key.as<std::string>() == "transform"){ //create transform with value from config.lua
+            new_entity.add_component<TransformComponent>(std::stoi(varmap.find("position_x")->second), 
+                                                         std::stoi(varmap.find("position_y")->second),
+                                                         std::stoi(varmap.find("velocity_x")->second),
+                                                         std::stoi(varmap.find("velocity_y")->second),
+                                                         std::stoi(varmap.find("width")->second),
+                                                         std::stoi(varmap.find("height")->second),
+                                                         std::stoi(varmap.find("scale")->second));
          }
-         else if(key.as<std::string>() == "sprite"){
-            new_entity.add_component<SpriteComponent>(args[0].as<std::string>());
+         else if(key.as<std::string>() == "sprite"){ //create sprite from config.lua
+            new_entity.add_component<SpriteComponent>(varmap.find("texture_id")->second);
          }
          else{
-            std::cout << "unknown component type\n";
+            std::cout << "unknown component type\n"; //error
          }
       }
-
-      //new_entity.add_component<TransformComponent>();
-      //new_entity.add_component<SpriteComponent>();
    }
-
-   // DELETE THIS CODE WHEN THE FOR LOOP IS FINISHED
-   // Entity& tank_entity(entity_mgr.add_entity("tank"));
-   // tank_entity.add_component<TransformComponent>(0,0,20,20,32,32,1);
-   // tank_entity.add_component<SpriteComponent>("tank-image");
-   // Entity& chopper_entity(entity_mgr.add_entity("chopper"));
-   // chopper_entity.add_component<TransformComponent>(240, 106, 0, 0, 32, 32, 1);
-   // chopper_entity.add_component<SpriteComponent>("chopper-image");
-
    entity_mgr.list_all_entities();
 }
